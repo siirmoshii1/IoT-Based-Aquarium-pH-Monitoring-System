@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<meta name="theme-color" content="#020608"/>
 <meta name="description" content="IoT Aquarium Monitoring System">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="logo.jpg"> 
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#020608">
+
+<link rel="apple-touch-icon" href="logo.jpg">
 <title>AquaStatus — Master Monitor</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -26,7 +27,7 @@
         background: radial-gradient(circle at top right, #0c2a3d 0%, var(--bg-deep) 100%); 
         color: var(--text-main); 
         height: 100vh; 
-        overflow: hidden; /* Hidden on Desktop, Auto on Mobile via Media Query */
+        overflow: hidden; 
     }
 
     /* --- TOPBAR --- */
@@ -46,7 +47,7 @@
     .status-badge.offline { border-color: var(--danger); color: var(--danger); }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-    /* --- MAIN LAYOUT (DESKTOP DEFAULT) --- */
+    /* --- MAIN LAYOUT --- */
     .main { 
         display: grid; 
         grid-template-columns: 1fr 380px; 
@@ -106,12 +107,18 @@
 
     /* --- HISTORY & ANALYSIS LISTS --- */
     .rec-feed { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; max-height: 400px; padding-right: 5px; }
-    .rec-card { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px; border-left: 3px solid #555; animation: fadeIn 0.5s ease; }
-    .rec-card.critical { border-left-color: var(--danger); background: rgba(255, 77, 77, 0.05); }
-    .rec-card.warning { border-left-color: var(--warning); background: rgba(255, 180, 0, 0.05); }
-    .rec-card.good { border-left-color: var(--success); background: rgba(0, 210, 106, 0.05); }
-    .rec-header { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-    .rec-body { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+    
+    .rec-card { 
+        background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px; border-left: 3px solid #555; 
+        animation: fadeIn 0.5s ease; 
+    }
+    .rec-card.critical { border-left-color: var(--danger); background: rgba(255, 77, 77, 0.08); }
+    .rec-card.warning { border-left-color: var(--warning); background: rgba(255, 180, 0, 0.08); }
+    .rec-card.good { border-left-color: var(--success); background: rgba(0, 210, 106, 0.08); }
+    
+    .rec-header { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .rec-body { font-size: 12px; color: #ccc; line-height: 1.5; }
+    .rec-fix { display: block; margin-top: 8px; font-size: 11px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
     .history-table { width: 100%; border-collapse: collapse; font-size: 12px; color: #ccc; }
     .history-table th { text-align: left; padding: 8px; border-bottom: 1px solid var(--primary); color: var(--primary); }
@@ -130,6 +137,9 @@
     .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; background: var(--primary); color: #fff; transition: 0.2s; touch-action: manipulation; }
     .btn:hover { background: #22d3ee; }
     .btn-ghost { background: transparent; border: 1px solid #666; color: #aaa; }
+    
+    /* Install Button Style */
+    #pwaInstallBtn { display: none; background: var(--accent); color: #000; }
 
     /* --- SPLASH SCREEN --- */
     #splashScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020608; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 1s ease-in-out, visibility 1s; }
@@ -138,59 +148,36 @@
     @keyframes pulseLogo { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    /* =========================================
-       RESPONSIVE DESIGN (TABLETS & PHONES) 
-       ========================================= */
-    
-    /* Tablet (Portrait) & Large Phones */
+    /* --- RESPONSIVE --- */
     @media (max-width: 900px) {
         body { overflow-y: auto; height: auto; }
-        .main { 
-            display: flex; flex-direction: column; 
-            height: auto; overflow: visible; padding-bottom: 40px;
-        }
+        .main { display: flex; flex-direction: column; height: auto; overflow: visible; padding-bottom: 40px; }
         .cards-grid { grid-template-columns: repeat(4, 1fr); }
         .charts-container { grid-template-columns: 1fr 1fr; }
     }
-
-    /* Mobile Phones */
     @media (max-width: 600px) {
         .cards-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .charts-container { grid-template-columns: 1fr; } /* Stack charts */
+        .charts-container { grid-template-columns: 1fr; }
         .mini-chart { height: 180px; }
-        
         .brand { font-size: 16px; }
-        .status-badge { padding: 2px 8px; font-size: 10px; }
-        
-        .wiz-grid { grid-template-columns: 1fr; } /* Single col wizard */
-        .wizard-box { padding: 20px; width: 95%; }
-        
-        /* Adjust font sizes for touch */
-        .sensor-val { font-size: 20px; }
-        .sensor-label { font-size: 10px; }
-        .btn { padding: 12px 20px; width: 100%; margin-bottom: 5px; } /* Easy tap buttons */
-        
+        .btn { padding: 12px 20px; width: 100%; margin-bottom: 5px; }
         .history-table { font-size: 10px; }
-        .history-table th, .history-table td { padding: 6px 4px; }
     }
 </style>
 </head>
 <body>
 
-<!-- SPLASH SCREEN -->
 <div id="splashScreen">
     <img src="logo.jpg" class="splash-logo" alt="AquaStatus Logo">
     <h1 style="color:var(--accent); font-size:24px; letter-spacing:2px;">AquaStatus</h1>
     <p style="color:var(--text-muted); font-size:11px; margin-top:10px; letter-spacing: 1px;">INITIALIZING SYSTEM...</p>
 </div>
 
-<!-- CREDITS MODAL -->
 <div id="creditsModal" class="wizard-overlay hidden">
     <div class="wizard-box">
         <img src="logo.jpg" style="width:60px; margin-bottom:15px; border-radius:10px; box-shadow: 0 0 15px rgba(0,212,255,0.2);">
         <h2 style="color:var(--primary); margin-bottom:5px; font-size: 18px;">IoT Aquarium Monitor</h2>
         <p style="color:var(--text-muted); font-size:11px; letter-spacing:1px; margin-bottom:20px;">BSINFOTECH 4B | Capstone Project</p>
-        
         <div style="text-align:left; background:rgba(255,255,255,0.03); padding:15px; border-radius:10px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.05); font-size: 13px;">
             <p style="margin-bottom:8px;">👑 <strong>Leader:</strong> <span style="color:var(--accent)">Romias, John Mark A.</span></p>
             <p style="margin-bottom:8px;">💻 Acal, Kyla Jane M.</p>
@@ -198,12 +185,10 @@
             <p style="margin-bottom:8px;">💻 Bautista, Jennylyn T.</p>
             <p>💻 Tebia, Jowie D.</p>
         </div>
-
         <button class="btn" onclick="appFlow.closeCredits()">Launch Dashboard</button>
     </div>
 </div>
 
-<!-- SETUP WIZARD -->
 <div id="setupWizard" class="wizard-overlay hidden">
     <div class="wizard-box" style="text-align:left;">
         <div id="step1">
@@ -232,41 +217,43 @@
     </div>
 </div>
 
-<!-- HISTORY MODAL -->
 <div id="historyModal" class="wizard-overlay hidden">
     <div class="wizard-box" style="width:600px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h2 style="color:var(--accent); font-size:18px;">📋 Data Log</h2>
             <button style="background:none; border:none; color:#666; font-size:20px; cursor:pointer;" onclick="historyLog.close()">✕</button>
         </div>
+        <p style="color:var(--text-muted); font-size:11px; margin-bottom:15px;">
+            Data stored locally. Gaps indicate times when the dashboard was closed.
+        </p>
         <div class="history-scroll">
             <table class="history-table">
-                <thead><tr><th>Time</th><th>pH</th><th>Temp</th><th>TDS</th><th>Turb</th><th>Score</th></tr></thead>
+                <thead><tr><th>Date</th><th>Time</th><th>pH</th><th>Temp</th><th>TDS</th><th>Turb</th><th>Health</th></tr></thead>
                 <tbody id="historyBody"></tbody>
             </table>
         </div>
-        <button class="btn btn-ghost" style="width:100%; margin-top:15px;" onclick="historyLog.close()">Close Log</button>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn btn-ghost" style="border-color:var(--danger); color:var(--danger); font-size:12px;" onclick="historyLog.clear()">🗑️ Clear All</button>
+            <button class="btn" style="flex:1;" onclick="historyLog.close()">Close Log</button>
+        </div>
     </div>
 </div>
 
-<!-- HEADER -->
 <header class="topbar blur-ui" id="uiHeader">
     <div class="brand">
         <img src="logo.jpg" alt="Logo">
         <div>AquaStatus <span style="font-size:9px; opacity:0.5; display:block; line-height:0.8;">PRO</span></div>
     </div>
     <div style="display:flex; gap:8px; align-items:center">
+        <button id="pwaInstallBtn" class="btn" style="padding:6px 12px; font-size:11px; display:none;" onclick="installPWA()">⬇️ Install</button>
         <button class="btn btn-ghost" style="padding:6px 10px; font-size:18px;" onclick="historyLog.open()">📋</button>
         <button class="btn btn-ghost" style="padding:6px 10px; font-size:18px;" onclick="wizard.edit()">⚙️</button>
-        <button id="installBtn" class="btn btn-ghost" style="padding:6px 10px; font-size:18px; display:none;" onclick="installPWA()">📱</button>
         <div id="connBadge" class="status-badge"><div class="status-dot"></div> <span id="connText" style="display:none;">ON</span></div>
     </div>
 </header>
 
-<!-- MAIN DASHBOARD -->
 <div class="main blur-ui" id="uiMain">
     
-    <!-- DATA SECTION -->
     <div class="panel-col">
         <div class="cards-grid">
             <div class="sensor-card" id="card-ph"><div class="sensor-label">pH Level</div><div class="sensor-val" id="val-ph">--</div><div class="status-pill" id="status-ph">...</div></div>
@@ -286,7 +273,6 @@
         </div>
     </div>
 
-    <!-- LOGIC SECTION -->
     <div class="panel-col">
         <div class="glass-box" style="border-color:rgba(255,77,77,0.2)">
             <div class="box-header"><div class="box-title" style="color:#ff8888">⚡ Hardware Controls</div></div>
@@ -317,7 +303,7 @@
 </div>
 
 <script>
-// --- CONFIGURATION ---
+// --- CONFIG ---
 const BLYNK_TOKEN = "nYLD0xTd3NQ2RGu0BCZY9RK4etGQt76b"; 
 const PINS = { ph:'v0', temp:'v1', tds:'v2', turb:'v3', sys:'v20', buz:'v21' };
 const FISH_DB = {
@@ -329,36 +315,64 @@ const FISH_DB = {
     "Tetra":    { minT: 21, maxT: 27, minPH: 6.0, maxPH: 7.5, maxTDS: 200 }
 };
 
-// --- STATE ---
 let app = { config: { limits: {}, elements: [], fish: [] }, charts: {}, online: false, interval: null, history: { ph:[], temp:[], tds:[], turb:[] }, lastAnalysis: 0 };
 
-// --- HISTORY ---
+// --- PWA INSTALLATION ---
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault(); deferredPrompt = e;
+  const btn = document.getElementById('pwaInstallBtn'); if(btn) btn.style.display = 'block';
+});
+async function installPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  if(outcome === 'accepted') document.getElementById('pwaInstallBtn').style.display = 'none';
+}
+
+// --- HISTORY & DATA ---
 const historyLog = {
     data: [],
     add: (ph, temp, tds, turb, score) => {
-        const entry = { time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), ph: ph.toFixed(1), temp: temp.toFixed(1), tds: Math.floor(tds), turb: Math.floor(turb), score: score };
+        const d = new Date();
+        const entry = { 
+            date: d.toLocaleDateString(undefined, {month:'short', day:'numeric'}),
+            time: d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), 
+            ph: ph.toFixed(1), temp: temp.toFixed(1), tds: Math.floor(tds), turb: Math.floor(turb), score: score 
+        };
         historyLog.data.unshift(entry);
-        if(historyLog.data.length > 20) historyLog.data.pop();
+        if(historyLog.data.length > 50) historyLog.data.pop(); // Increased to 50
         storage.saveLog(historyLog.data);
     },
     open: () => {
         const tb = document.getElementById('historyBody'); tb.innerHTML = '';
         const logs = storage.loadLog() || historyLog.data;
-        if(!logs.length) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;">No data logged yet.</td></tr>';
+        if(!logs.length) tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No data logged yet.</td></tr>';
         else logs.forEach(r => {
             let c='#00d26a'; if(r.score<80) c='#ffb400'; if(r.score<50) c='#ff4d4d';
-            tb.innerHTML += `<tr><td>${r.time}</td><td>${r.ph}</td><td>${r.temp}</td><td>${r.tds}</td><td>${r.turb}</td><td style="color:${c}">${r.score}%</td></tr>`;
+            tb.innerHTML += `<tr>
+                <td style="color:#666; font-size:10px;">${r.date}</td>
+                <td>${r.time}</td><td>${r.ph}</td><td>${r.temp}</td><td>${r.tds}</td><td>${r.turb}%</td>
+                <td style="color:${c}">${r.score}%</td>
+            </tr>`;
         });
         document.getElementById('historyModal').classList.remove('hidden');
-        document.querySelectorAll('.blur-ui').forEach(e=>e.style.filter = 'blur(5px)');
+        document.querySelectorAll('.blur-ui').forEach(e=>e.classList.add('blur-ui'));
     },
     close: () => {
         document.getElementById('historyModal').classList.add('hidden');
-        document.querySelectorAll('.blur-ui').forEach(e=>e.style.filter = 'none');
-    } 
+        document.querySelectorAll('.blur-ui').forEach(e=>e.classList.remove('blur-ui'));
+    },
+    clear: () => {
+        if(confirm("Clear all history logs?")) {
+            historyLog.data = [];
+            storage.saveLog([]);
+            historyLog.open(); // refresh
+        }
+    }
 };
 
-// --- STORAGE ---
 const storage = {
     save: (d) => localStorage.setItem('aqua_conf_v5', JSON.stringify(d)),
     load: () => JSON.parse(localStorage.getItem('aqua_conf_v5')),
@@ -366,35 +380,7 @@ const storage = {
     loadLog: () => JSON.parse(localStorage.getItem('aqua_log_v5'))
 };
 
-// --- PWA INSTALLATION ---
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  document.getElementById('installBtn').style.display = 'inline-block';
-});
-
-window.addEventListener('appinstalled', () => {
-  deferredPrompt = null;
-  document.getElementById('installBtn').style.display = 'none';
-});
-
-function installPWA() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
-      }
-      deferredPrompt = null;
-    });
-  }
-}
-
-// --- STARTUP ---
+// --- STARTUP & LOGIC ---
 const appFlow = {
     start: () => {
         setTimeout(() => {
@@ -406,11 +392,8 @@ const appFlow = {
         document.getElementById('creditsModal').classList.add('hidden');
         const saved = storage.load();
         if(saved) { app.config=saved; appFlow.launch(); } else { document.getElementById('setupWizard').classList.remove('hidden'); wizard.next(1); }
-        // PWA: Safe Registration with error handling
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('SW Registered'))
-                .catch(err => console.warn('SW Registration failed (likely in preview mode):', err));
+            navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW Registered')).catch(err => console.warn('SW Fail:', err));
         }
     },
     launch: () => {
@@ -419,7 +402,6 @@ const appFlow = {
     }
 };
 
-// --- BLYNK ---
 const blynk = {
     check: async () => {
         try {
@@ -434,7 +416,6 @@ const blynk = {
     set: async (p, v) => { try { await fetch(`https://blynk.cloud/external/api/update?token=${BLYNK_TOKEN}&${p}=${v?1:0}`); } catch(e){} }
 };
 
-// --- WIZARD ---
 const wizard = {
     init: () => {
         const g = document.getElementById('fishGrid'); g.innerHTML = '';
@@ -470,7 +451,6 @@ const wizard = {
     }
 };
 
-// --- CHARTS ---
 function initCharts() {
     const opts = { responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:true, grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#666', font:{size:8}}}} , elements:{point:{radius:0}, line:{tension:0.4, borderWidth:2}} };
     const make = (id, c) => new Chart(document.getElementById(id), {type:'line', data:{labels:[], datasets:[{data:[], borderColor:c, backgroundColor:c+'15', fill:true}]}, options:opts});
@@ -479,7 +459,6 @@ function initCharts() {
 }
 function pushChart(k, v) { const c=app.charts[k]; c.data.labels.push(''); c.data.datasets[0].data.push(v); if(c.data.labels.length>15) { c.data.labels.shift(); c.data.datasets[0].data.shift(); } c.update('none'); }
 
-// --- LOGIC ---
 async function updateLoop() {
     await blynk.check();
     const [ph, temp, tds, turb, sys, buz] = await Promise.all([
@@ -502,31 +481,103 @@ async function updateLoop() {
 function addToHistory(key, val) { if(val!==-1 && val!==-127) { app.history[key].push(val); if(app.history[key].length>30) app.history[key].shift(); } }
 function getAvg(key) { const a=app.history[key]; return a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0; }
 
+// === UPGRADED SMART ANALYTICS ENGINE (CONVERSATIONAL) ===
 function analyzeStable() {
     const L = app.config.limits, E = app.config.elements;
-    const ph=getAvg('ph'), temp=getAvg('temp'), tds=getAvg('tds'), turb=getAvg('turb');
-    let items=[], score=100;
-    const setPill=(id, cls, txt)=>{ if(document.getElementById('val-'+id).innerText!=="--"){ const el=document.getElementById('status-'+id); el.className=`status-pill`; el.style.background=cls==='good'?'rgba(0,255,157,0.1)':(cls==='warn'?'rgba(255,204,0,0.1)':'rgba(255,59,59,0.1)'); el.style.color=cls==='good'?'var(--success)':(cls==='warn'?'var(--warning)':'var(--danger)'); el.innerText=txt; }};
+    // Use average if available, otherwise fallback to last reading
+    const ph = getAvg('ph') || 0, temp = getAvg('temp') || 0, tds = getAvg('tds') || 0, turb = getAvg('turb') || 0;
+    
+    let items = [], score = 100;
 
-    if(ph) { if(ph<L.minPH){ items.push({type:'critical', title:'pH Low', rec:'Add buffer.'}); setPill('ph','bad','ACIDIC'); score-=20; } else if(ph>L.maxPH){ items.push({type:'warning', title:'pH High', rec:'Add driftwood.'}); setPill('ph','warn','ALKALINE'); score-=10; } else setPill('ph','good','OK'); }
-    if(temp) { if(temp<L.minT){ items.push({type:'critical', title:'Temp Low', rec:'Check heater.'}); setPill('temp','bad','COLD'); score-=30; } else if(temp>L.maxT){ items.push({type:'critical', title:'Temp High', rec:'Cool down.'}); setPill('temp','bad','HOT'); score-=30; } else setPill('temp','good','OK'); }
-    if(turb) { if(turb>100){ if(E.includes("Soil") && turb<200){ items.push({type:'warning', title:'Haze', rec:'Substrate dust.'}); setPill('turb','warn','HAZE'); score-=5; } else { items.push({type:'critical', title:'Cloudy', rec:'Check filter.'}); setPill('turb','bad','DIRTY'); score-=15; } } else setPill('turb','good','CLEAR'); }
-    if(tds && tds>L.maxTDS) { items.push({type:'warning', title:'High TDS', rec:'Change water.'}); setPill('tds','warn','HIGH'); score-=10; } else setPill('tds','good','OK');
+    const setPill=(id, cls, txt)=>{ 
+        if(document.getElementById('val-'+id).innerText!=="--"){ 
+            const el=document.getElementById('status-'+id); 
+            el.className=`status-pill`; 
+            el.style.background=cls==='good'?'rgba(0,255,157,0.1)':(cls==='warn'?'rgba(255,204,0,0.1)':'rgba(255,59,59,0.1)'); 
+            el.style.color=cls==='good'?'var(--success)':(cls==='warn'?'var(--warning)':'var(--danger)'); 
+            el.innerText=txt; 
+        }
+    };
 
+    // 1. pH LOGIC (Conversational Context)
+    if(ph < L.minPH) {
+        let reason = "The water is becoming too acidic.";
+        let fix = "Consider adding a pH buffer solution.";
+        // Context Checks
+        if (E.includes("Driftwood")) { reason = "It looks like tannins from your <b>Driftwood</b> are lowering the pH naturally."; fix = "You can remove some wood or perform a partial water change."; }
+        if (E.includes("CO2")) { reason = "Your <b>CO2 injection</b> might be too high, causing acidity."; fix = "Reduce the CO2 bubble count immediately."; }
+        
+        items.push({type:'critical', title:`Low pH (${ph.toFixed(1)})`, rec:`${reason}<br><span class="rec-fix">RECOMMENDATION: ${fix}</span>`}); 
+        setPill('ph','bad','ACIDIC'); score-=20;
+    } 
+    else if(ph > L.maxPH) {
+        let reason = "The water is too alkaline (basic).";
+        let fix = "You can add peat moss or almond leaves to the filter.";
+        // Context Checks
+        if (E.includes("Rocks") || E.includes("Coral")) { reason = "Your <b>Rocks or Coral</b> are likely leaching minerals into the water."; fix = "Consider removing some hardscape elements."; }
+        if (E.includes("Plants")) { reason = "Rapid plant photosynthesis might be raising the pH."; fix = "Try reducing the light period by 1 hour."; }
+
+        items.push({type:'warning', title:`High pH (${ph.toFixed(1)})`, rec:`${reason}<br><span class="rec-fix">RECOMMENDATION: ${fix}</span>`}); 
+        setPill('ph','warn','ALKALINE'); score-=10;
+    } 
+    else setPill('ph','good','OPTIMAL');
+
+    // 2. TEMP LOGIC
+    if(temp < L.minT) { 
+        items.push({type:'critical', title:`Low Temp (${temp.toFixed(1)}°C)`, rec:`The water is too cold for your livestock.<br><span class="rec-fix">ACTION: Check if your heater is plugged in or set correctly.</span>`}); 
+        setPill('temp','bad','COLD'); score-=30; 
+    } 
+    else if(temp > L.maxT) { 
+        items.push({type:'critical', title:`High Temp (${temp.toFixed(1)}°C)`, rec:`Risk of overheating detected.<br><span class="rec-fix">ACTION: Turn off tank lights & float ice bottles to cool it down.</span>`}); 
+        setPill('temp','bad','HOT'); score-=30; 
+    } 
+    else setPill('temp','good','OPTIMAL');
+
+    // 3. CLARITY LOGIC
+    if(turb < 20) { 
+        // Check if the user has Soil
+        if(E.includes("Soil")) { 
+            items.push({type:'warning', title:'Water Haze', rec:`This haze is likely dust from your <b>Aqua Soil</b>.<br><span class="rec-fix">NOTE: Do nothing. It will settle naturally in 24 hours.</span>`}); 
+            setPill('turb','warn','HAZE'); score-=5; 
+        } else { 
+            items.push({type:'critical', title:'Low Clarity', rec:`The water is unusually cloudy or dirty.<br><span class="rec-fix">ACTION: Check your filter flow or look for a bacterial bloom.</span>`}); 
+            setPill('turb','bad','DIRTY'); score-=15; 
+        } 
+    } else setPill('turb','good','CLEAR');
+
+    // 4. TDS LOGIC
+    if(tds > L.maxTDS) { 
+        let reason = "High concentration of dissolved solids.";
+        if (E.includes("Coral")) reason = "Your <b>Crushed Coral</b> substrate is dissolving rapidly.";
+        
+        items.push({type:'warning', title:'High TDS', rec:`${reason}<br><span class="rec-fix">ACTION: Perform a 20% water change to dilute it.</span>`}); 
+        setPill('tds','warn','HIGH'); score-=10; 
+    } else setPill('tds','good','OPTIMAL');
+
+    // RENDER
     const feed=document.getElementById('analysis-feed');
-    if(!items.length) feed.innerHTML=`<div class="rec-card good"><div class="rec-header">✅ Stable</div><div class="rec-body">Parameters optimal.</div></div>`;
+    if(!items.length) feed.innerHTML=`<div class="rec-card good"><div class="rec-header">✅ System Stable</div><div class="rec-body">All water parameters match the specific needs of your selected livestock.</div></div>`;
     else feed.innerHTML=items.map(i=>`<div class="rec-card ${i.type}"><div class="rec-header"><span>${i.type==='critical'?'🚨':'⚠️'} ${i.title}</span></div><div class="rec-body">${i.rec}</div></div>`).join('');
 
     if(score<0) score=0; const el=document.getElementById('healthScore'), ring=document.getElementById('scoreCircle');
     el.innerText=Math.floor(score)+"%";
     let c='var(--success)'; if(score<80) c='var(--warning)'; if(score<50) c='var(--danger)';
     ring.style.borderColor=c; el.style.color=c;
-    document.getElementById('lastAnalysisTime').innerText="Upd: "+new Date().toLocaleTimeString();
+    document.getElementById('lastAnalysisTime').innerText="Analysis: "+new Date().toLocaleTimeString();
     
     historyLog.add(ph, temp, tds, turb, score);
 }
 
 window.onload = () => { wizard.init(); appFlow.start(); };
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(() => console.log("Service Worker registered"))
+    .catch(err => console.log("SW registration failed:", err));
+}
+</script>
+
+
 </body>
 </html>

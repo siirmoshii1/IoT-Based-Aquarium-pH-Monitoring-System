@@ -1,85 +1,67 @@
-const CACHE_NAME = 'aquastatus-cache-v1';
-const urlsToCache = [
-  '.',
-  'index.html',
-  'manifest.json',
-  'logo.jpg',
-  'https://cdn.jsdelivr.net/npm/chart.js'
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `aquastatus-cache-${CACHE_VERSION}`;
+
+const ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/logo.jpg'
 ];
 
-// Install a service worker
+// INSTALL
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache => {
+      console.log('Caching assets...');
+      return cache.addAll(ASSETS);
+    })
   );
   self.skipWaiting();
 });
 
-// Cache and return requests
+// FETCH
 self.addEventListener('fetch', event => {
-  // We only want to cache GET requests.
-  if (event.request.method !== 'GET') {
-    return;
-  }
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+
+      return fetch(event.request)
+        .then(response => {
+          if (!response || response.status !== 200) return response;
+
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+
           return response;
-        }
-        return fetch(event.request).then(
-          function(response) {
-            // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            var responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        ).catch(() => {
-          // Offline fallback: Return cached index.html for navigation requests
+        })
+        .catch(() => {
+          // Offline navigation fallback
           if (event.request.mode === 'navigate') {
-            return caches.match('index.html');
+            return caches.match('/index.html');
           }
-          // For other requests, return a simple offline response or cached version
-          return new Response('Offline: Content not available', {
+
+          return new Response("You're offline", {
             status: 503,
-            statusText: 'Service Unavailable'
+            statusText: "Offline"
           });
         });
-      })
+    })
   );
 });
 
-// Activate event
+// ACTIVATE
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(
+        keys
+          .filter(k => k !== CACHE_NAME)
+          .map(k => caches.delete(k))
+      )
+    )
   );
+
   self.clients.claim();
 });
