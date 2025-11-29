@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#020608"/>
 <meta name="description" content="IoT Aquarium Monitoring System">
-<link rel="manifest" href="manifest.webmanifest" />
-<meta name="theme-color" content="#020608">
-
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="logo.jpg">
 <title>AquaStatus — Master Monitor</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+    /* --- CORE VARIABLES --- */
     :root {
         --bg-deep: #020608;
         --bg-glass: rgba(22, 38, 50, 0.85);
@@ -25,12 +25,10 @@
     body { 
         font-family: 'Segoe UI', system-ui, sans-serif; 
         background: radial-gradient(circle at top right, #0c2a3d 0%, var(--bg-deep) 100%); 
-        color: var(--text-main); 
-        height: 100vh; 
-        overflow: hidden; 
+        color: var(--text-main); height: 100vh; overflow: hidden; 
     }
 
-    /* --- TOPBAR --- */
+    /* --- HEADER --- */
     header.topbar {
         height: 60px; display: flex; justify-content: space-between; align-items: center;
         padding: 0 20px; background: rgba(2, 6, 8, 0.8); border-bottom: 1px solid var(--border-glass);
@@ -47,19 +45,11 @@
     .status-badge.offline { border-color: var(--danger); color: var(--danger); }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-    /* --- MAIN LAYOUT --- */
-    .main { 
-        display: grid; 
-        grid-template-columns: 1fr 380px; 
-        gap: 20px; 
-        padding: 20px; 
-        height: calc(100vh - 60px); 
-        overflow-y: auto; 
-    }
-
+    /* --- LAYOUT --- */
+    .main { display: grid; grid-template-columns: 1fr 380px; gap: 20px; padding: 20px; height: calc(100vh - 60px); overflow-y: auto; }
     .panel-col { display: flex; flex-direction: column; gap: 20px; }
 
-    /* --- COMPONENTS --- */
+    /* --- GLASS BOXES --- */
     .glass-box {
         background: var(--bg-glass); border: 1px solid var(--border-glass); 
         border-radius: 16px; padding: 20px; backdrop-filter: blur(16px);
@@ -68,12 +58,9 @@
     .box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
     .box-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    /* --- SENSOR CARDS --- */
+    /* --- CARDS --- */
     .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-    .sensor-card { 
-        background: rgba(255,255,255,0.02); border-radius: 12px; padding: 12px; 
-        border: 1px solid rgba(255,255,255,0.05); text-align: center; position: relative; transition: 0.3s;
-    }
+    .sensor-card { background: rgba(255,255,255,0.02); border-radius: 12px; padding: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center; position: relative; transition: 0.3s; }
     .sensor-card.error { border-color: var(--danger); background: rgba(255, 77, 77, 0.05); }
     .sensor-val { font-size: 24px; font-weight: 800; color: #fff; margin: 6px 0; }
     .sensor-label { font-size: 11px; color: var(--text-muted); }
@@ -84,16 +71,16 @@
     .mini-chart { background: rgba(255,255,255,0.02); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; }
     .canvas-wrap { flex: 1; width: 100%; min-height: 0; position: relative; }
 
-    /* --- HEALTH SCORE --- */
+    /* --- HEALTH & SYSTEM STATUS --- */
     .health-score-container { text-align: center; margin-bottom: 15px; }
-    .score-circle {
-        width: 100px; height: 100px; border-radius: 50%; margin: 0 auto;
-        border: 4px solid var(--success); display: flex; flex-direction: column;
-        justify-content: center; align-items: center; background: rgba(0,0,0,0.2);
-        transition: border-color 0.5s;
-    }
+    .score-circle { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto; border: 4px solid var(--success); display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.2); transition: border-color 0.5s; }
     .score-val { font-size: 32px; font-weight: 800; color: #fff; }
     .score-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+
+    .system-status-row { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px; }
+    .sys-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #aaa; }
+    .sys-dot { width: 6px; height: 6px; border-radius: 50%; background: #555; }
+    .sys-dot.active { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
 
     /* --- CONTROLS --- */
     .control-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -105,43 +92,35 @@
     input:checked + .slider.danger { background-color: var(--danger); }
     input:checked + .slider:before { transform: translateX(20px); }
 
-    /* --- HISTORY & ANALYSIS LISTS --- */
+    /* --- HISTORY --- */
     .rec-feed { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; max-height: 400px; padding-right: 5px; }
-    
-    .rec-card { 
-        background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px; border-left: 3px solid #555; 
-        animation: fadeIn 0.5s ease; 
-    }
+    .rec-card { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px; border-left: 3px solid #555; animation: fadeIn 0.5s ease; }
     .rec-card.critical { border-left-color: var(--danger); background: rgba(255, 77, 77, 0.08); }
     .rec-card.warning { border-left-color: var(--warning); background: rgba(255, 180, 0, 0.08); }
     .rec-card.good { border-left-color: var(--success); background: rgba(0, 210, 106, 0.08); }
+    .rec-header { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .rec-body { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+    .history-table { width: 100%; border-collapse: collapse; font-size: 11px; color: #ccc; }
+    .history-table th { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--primary); color: var(--primary); font-weight:bold; position:sticky; top:0; background: #0f172a; }
+    .history-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .history-scroll { max-height: 250px; overflow-y: auto; margin-top: 10px; border: 1px solid rgba(255,255,255,0.05); border-radius:8px; }
+    .history-chart-wrapper { height: 150px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
     
-    .rec-header { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 6px; display: flex; justify-content: space-between; }
-    .rec-body { font-size: 12px; color: #ccc; line-height: 1.5; }
-    .rec-fix { display: block; margin-top: 8px; font-size: 11px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    .history-table { width: 100%; border-collapse: collapse; font-size: 12px; color: #ccc; }
-    .history-table th { text-align: left; padding: 8px; border-bottom: 1px solid var(--primary); color: var(--primary); }
-    .history-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .history-scroll { max-height: 300px; overflow-y: auto; margin-top: 10px; }
-
-    /* --- MODALS & OVERLAYS --- */
+    /* --- MODALS --- */
     .wizard-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(15px); transition: 0.3s; }
     .wizard-overlay.hidden { opacity: 0; pointer-events: none; }
-    .wizard-box { background: #0f172a; border: 1px solid var(--primary); width: 500px; max-width: 90%; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 0 50px rgba(0, 212, 255, 0.15); max-height: 90vh; overflow-y: auto; }
+    .wizard-box { background: #0f172a; border: 1px solid var(--primary); width: 750px; max-width: 90%; padding: 30px; border-radius: 16px; text-align: center; box-shadow: 0 0 50px rgba(0, 212, 255, 0.15); max-height: 90vh; overflow-y: auto; }
     .wiz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 20px 0; max-height: 300px; overflow-y: auto; text-align: left; }
     .opt-label { display: block; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s; }
-    .opt-label:active { transform: scale(0.98); }
     input:checked + .opt-label { background: rgba(6,182,212,0.2); color: var(--accent); border: 1px solid var(--primary); }
 
     .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; background: var(--primary); color: #fff; transition: 0.2s; touch-action: manipulation; }
     .btn:hover { background: #22d3ee; }
     .btn-ghost { background: transparent; border: 1px solid #666; color: #aaa; }
-    
-    /* Install Button Style */
     #pwaInstallBtn { display: none; background: var(--accent); color: #000; }
 
-    /* --- SPLASH SCREEN --- */
+    /* --- SPLASH --- */
     #splashScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020608; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 1s ease-in-out, visibility 1s; }
     #splashScreen.fade-out { opacity: 0; visibility: hidden; }
     .splash-logo { width: 120px; margin-bottom: 20px; animation: pulseLogo 2s infinite; border-radius: 15px; }
@@ -167,17 +146,19 @@
 </head>
 <body>
 
+<!-- SPLASH SCREEN -->
 <div id="splashScreen">
     <img src="logo.jpg" class="splash-logo" alt="AquaStatus Logo">
     <h1 style="color:var(--accent); font-size:24px; letter-spacing:2px;">AquaStatus</h1>
-    <p style="color:var(--text-muted); font-size:11px; margin-top:10px; letter-spacing: 1px;">INITIALIZING SYSTEM...</p>
+    <p style="color:var(--text-muted); font-size:11px; margin-top:10px;">INITIALIZING SYSTEM...</p>
 </div>
 
+<!-- CREDITS MODAL -->
 <div id="creditsModal" class="wizard-overlay hidden">
-    <div class="wizard-box">
+    <div class="wizard-box" style="width:450px;">
         <img src="logo.jpg" style="width:60px; margin-bottom:15px; border-radius:10px; box-shadow: 0 0 15px rgba(0,212,255,0.2);">
         <h2 style="color:var(--primary); margin-bottom:5px; font-size: 18px;">IoT Aquarium Monitor</h2>
-        <p style="color:var(--text-muted); font-size:11px; letter-spacing:1px; margin-bottom:20px;">BSINFOTECH 4B | IT Elective 5 Project</p>
+        <p style="color:var(--text-muted); font-size:11px; letter-spacing:1px; margin-bottom:20px;">BSINFOTECH 4B | Capstone Project</p>
         <div style="text-align:left; background:rgba(255,255,255,0.03); padding:15px; border-radius:10px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.05); font-size: 13px;">
             <p style="margin-bottom:8px;">👑 <strong>Leader:</strong> <span style="color:var(--accent)">Romias, John Mark A.</span></p>
             <p style="margin-bottom:8px;">💻 Acal, Kyla Jane M.</p>
@@ -189,11 +170,11 @@
     </div>
 </div>
 
+<!-- SETUP WIZARD -->
 <div id="setupWizard" class="wizard-overlay hidden">
-    <div class="wizard-box" style="text-align:left;">
+    <div class="wizard-box" style="text-align:left; width:500px;">
         <div id="step1">
             <h2 style="color:var(--accent); font-size: 20px;">🐠 Select Inhabitants</h2>
-            <p style="color:#888; font-size:12px">We use this to calculate specific water parameters.</p>
             <div class="wiz-grid" id="fishGrid"></div>
             <div style="text-align:right; margin-top:15px;"><button class="btn" onclick="wizard.next(2)">Next Step</button></div>
         </div>
@@ -217,24 +198,36 @@
     </div>
 </div>
 
+<!-- HISTORY MODAL (UPDATED) -->
 <div id="historyModal" class="wizard-overlay hidden">
-    <div class="wizard-box" style="width:600px;">
+    <div class="wizard-box" style="width:750px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h2 style="color:var(--accent); font-size:18px;">Data Log</h2>
+            <h2 style="color:var(--accent); font-size:18px;">📋 Data History</h2>
             <button style="background:none; border:none; color:#666; font-size:20px; cursor:pointer;" onclick="historyLog.close()">✕</button>
         </div>
-        <p style="color:var(--text-muted); font-size:11px; margin-bottom:15px;">
-            Data stored locally. Gaps indicate times when the dashboard was closed.
-        </p>
+        
+        <!-- HISTORY GRAPH -->
+        <div class="history-chart-wrapper">
+            <canvas id="historyChart"></canvas>
+        </div>
+
+        <!-- DATA SOURCE TOGGLE -->
+        <div style="display:flex; gap:10px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
+            <button class="btn btn-ghost" style="flex:1; font-size:11px;" onclick="historyLog.loadCloud()">☁️ Load from Cloud (ThingSpeak)</button>
+            <div style="position:relative; flex:1;">
+                <input type="file" id="csvInput" accept=".csv" style="position:absolute; width:100%; height:100%; opacity:0; cursor:pointer;" onchange="historyLog.importCSV(this)">
+                <button class="btn btn-ghost" style="width:100%; font-size:11px;">📂 Import SD File</button>
+            </div>
+        </div>
+        
         <div class="history-scroll">
             <table class="history-table">
-                <thead><tr><th>Date</th><th>Time</th><th>pH</th><th>Temp</th><th>TDS</th><th>Turb</th><th>Health</th></tr></thead>
+                <thead><tr><th>Time</th><th>pH</th><th>Temp</th><th>TDS</th><th>Turb</th></tr></thead>
                 <tbody id="historyBody"></tbody>
             </table>
         </div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button class="btn btn-ghost" style="border-color:var(--danger); color:var(--danger); font-size:12px;" onclick="historyLog.clear()">🗑️ Clear All</button>
-            <button class="btn" style="flex:1;" onclick="historyLog.close()">Close Log</button>
+        <div style="margin-top:15px; text-align:right;">
+            <button class="btn" style="padding:6px 20px; font-size:12px;" onclick="historyLog.close()">Close</button>
         </div>
     </div>
 </div>
@@ -245,9 +238,9 @@
         <div>AquaStatus <span style="font-size:9px; opacity:0.5; display:block; line-height:0.8;">PRO</span></div>
     </div>
     <div style="display:flex; gap:8px; align-items:center">
-        <!-- <button id="pwaInstallBtn" class="btn" style="padding:6px 12px; font-size:11px; display:none;" onclick="installPWA()">Install</button> -->
-        <button class="btn btn-ghost" style="padding:6px 10px; font-size:18px;" onclick="historyLog.open()">History</button>
-        <button class="btn btn-ghost" style="padding:6px 10px; font-size:18px;" onclick="wizard.edit()">Setting</button>
+        <button id="pwaInstallBtn" class="btn" style="padding:6px 12px; font-size:11px; display:none;" onclick="installPWA()">⬇️ Install</button>
+        <button class="btn btn-ghost" style="padding:6px 10px; font-size:18px;" onclick="historyLog.open()">📋</button>
+        <button class="btn btn-ghost" style="padding:6px 10px; font-size:18px;" onclick="wizard.edit()">⚙️</button>
         <div id="connBadge" class="status-badge"><div class="status-dot"></div> <span id="connText" style="display:none;">ON</span></div>
     </div>
 </header>
@@ -263,7 +256,7 @@
         </div>
 
         <div class="glass-box" style="flex:1">
-            <div class="box-header"><div class="box-title">Live Telemetry</div></div>
+            <div class="box-header"><div class="box-title">📊 Live Telemetry</div></div>
             <div class="charts-container">
                 <div class="mini-chart"><div class="chart-header" style="color:#06b6d4; font-size:10px;">pH</div><div class="canvas-wrap"><canvas id="chartPH"></canvas></div></div>
                 <div class="mini-chart"><div class="chart-header" style="color:#ff4d4d; font-size:10px;">TEMP</div><div class="canvas-wrap"><canvas id="chartTemp"></canvas></div></div>
@@ -293,8 +286,16 @@
                     <div class="score-label">Health</div>
                 </div>
             </div>
-            <div class="box-header">
-                <div class="box-title">Smart Analysis</div>
+            
+            <!-- NEW: System Status Indicators -->
+            <div class="system-status-row">
+                <div class="sys-item"><div class="sys-dot active"></div> WiFi</div>
+                <div class="sys-item"><div class="sys-dot active"></div> SD Rec</div>
+                <div class="sys-item"><div class="sys-dot active"></div> Cloud</div>
+            </div>
+
+            <div class="box-header" style="margin-top:15px;">
+                <div class="box-title">🧠 Smart Analysis</div>
                 <div style="font-size:9px; color:#666" id="lastAnalysisTime">...</div>
             </div>
             <div id="analysis-feed" class="rec-feed"><div class="rec-card"><div class="rec-body">Stabilizing... (10s)</div></div></div>
@@ -303,9 +304,12 @@
 </div>
 
 <script>
-// --- CONFIG ---
-const BLYNK_TOKEN = "nYLD0xTd3NQ2RGu0BCZY9RK4etGQt76b"; 
+// CONFIG
+const BLYNK_TOKEN = "M0rBVNrs7_mwtCUABmS0TcQMw50IvDyB"; 
+const THINGSPEAK_CH_ID = 3186804; 
+const THINGSPEAK_READ_KEY = "41537LYSZIPA9UZQ"; 
 const PINS = { ph:'v0', temp:'v1', tds:'v2', turb:'v3', sys:'v20', buz:'v21' };
+
 const FISH_DB = {
     "Goldfish": { minT: 18, maxT: 23, minPH: 7.0, maxPH: 8.0, maxTDS: 400 },
     "Betta":    { minT: 24, maxT: 28, minPH: 6.5, maxPH: 7.5, maxTDS: 250 },
@@ -317,46 +321,16 @@ const FISH_DB = {
 
 let app = { config: { limits: {}, elements: [], fish: [] }, charts: {}, online: false, interval: null, history: { ph:[], temp:[], tds:[], turb:[] }, lastAnalysis: 0 };
 
-// --- PWA INSTALLATION ---
+// PWA
 let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault(); deferredPrompt = e;
-  const btn = document.getElementById('pwaInstallBtn'); if(btn) btn.style.display = 'block';
-});
-async function installPWA() {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  if(outcome === 'accepted') document.getElementById('pwaInstallBtn').style.display = 'none';
-}
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; const btn = document.getElementById('pwaInstallBtn'); if(btn) btn.style.display = 'block'; });
+async function installPWA() { if (!deferredPrompt) return; deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; if(outcome === 'accepted') document.getElementById('pwaInstallBtn').style.display = 'none'; }
 
-// --- HISTORY & DATA ---
+// HISTORY MANAGER (DUAL MODE)
 const historyLog = {
-    data: [],
-    add: (ph, temp, tds, turb, score) => {
-        const d = new Date();
-        const entry = { 
-            date: d.toLocaleDateString(undefined, {month:'short', day:'numeric'}),
-            time: d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), 
-            ph: ph.toFixed(1), temp: temp.toFixed(1), tds: Math.floor(tds), turb: Math.floor(turb), score: score 
-        };
-        historyLog.data.unshift(entry);
-        if(historyLog.data.length > 50) historyLog.data.pop(); // Increased to 50
-        storage.saveLog(historyLog.data);
-    },
+    chart: null,
     open: () => {
-        const tb = document.getElementById('historyBody'); tb.innerHTML = '';
-        const logs = storage.loadLog() || historyLog.data;
-        if(!logs.length) tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No data logged yet.</td></tr>';
-        else logs.forEach(r => {
-            let c='#00d26a'; if(r.score<80) c='#ffb400'; if(r.score<50) c='#ff4d4d';
-            tb.innerHTML += `<tr>
-                <td style="color:#666; font-size:10px;">${r.date}</td>
-                <td>${r.time}</td><td>${r.ph}</td><td>${r.temp}</td><td>${r.tds}</td><td>${r.turb}%</td>
-                <td style="color:${c}">${r.score}%</td>
-            </tr>`;
-        });
+        historyLog.loadCloud(); // Default to cloud
         document.getElementById('historyModal').classList.remove('hidden');
         document.querySelectorAll('.blur-ui').forEach(e=>e.classList.add('blur-ui'));
     },
@@ -364,90 +338,153 @@ const historyLog = {
         document.getElementById('historyModal').classList.add('hidden');
         document.querySelectorAll('.blur-ui').forEach(e=>e.classList.remove('blur-ui'));
     },
-    clear: () => {
-        if(confirm("Clear all history logs?")) {
-            historyLog.data = [];
-            storage.saveLog([]);
-            historyLog.open(); // refresh
+    importCSV: (input) => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const lines = text.split('\n');
+            // Create dummy feeds structure to reuse render function
+            const feeds = [];
+            for(let i=1; i<lines.length; i++) {
+                const cols = lines[i].split(',');
+                if(cols.length >= 5) {
+                    // CSV: TimeStr, pH, Temp, TDS, Turb
+                    feeds.push({ 
+                        created_at: cols[0], 
+                        field1: cols[1], field2: cols[2], field3: cols[3], field4: cols[4] 
+                    });
+                }
+            }
+            historyLog.renderTable(feeds, "SD File Import");
+        };
+        reader.readAsText(file);
+    },
+    loadCloud: async () => {
+        const tb = document.getElementById('historyBody');
+        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Fetching Cloud Data...</td></tr>';
+        try {
+            const res = await fetch(`https://api.thingspeak.com/channels/${THINGSPEAK_CH_ID}/feeds.json?api_key=${THINGSPEAK_READ_KEY}&results=50`);
+            const data = await res.json();
+            historyLog.renderTable(data.feeds, "Cloud");
+        } catch(e) {
+            tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Failed to load data. Check connection.</td></tr>';
         }
+    },
+    renderTable: (feeds, source) => {
+        const tb = document.getElementById('historyBody');
+        tb.innerHTML = '';
+        const recentFeeds = feeds.reverse(); // Newest first
+        
+        recentFeeds.forEach(f => {
+            if(f.field1) {
+                // Parse date flexibly (handle both ISO string from Cloud and Custom string from SD)
+                let dateStr, timeStr;
+                if(source === "Cloud") {
+                    const d = new Date(f.created_at);
+                    timeStr = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    dateStr = d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+                } else {
+                    // Assume SD format is already readable string
+                    dateStr = f.created_at; timeStr = "";
+                }
+
+                tb.innerHTML += `<tr>
+                    <td style="color:#888; font-size:10px;">${dateStr} ${timeStr}</td>
+                    <td>${parseFloat(f.field1).toFixed(1)}</td>
+                    <td>${parseFloat(f.field2).toFixed(1)}°</td>
+                    <td>${f.field3}</td>
+                    <td>${f.field4}%</td>
+                </tr>`;
+            }
+        });
+        // Render Chart (reverse back to chronological)
+        historyLog.renderChart(recentFeeds.reverse());
+    },
+    renderChart: (feeds) => {
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        if(historyLog.chart) historyLog.chart.destroy();
+        const recent = feeds.slice(-30); // Last 30 points
+        
+        historyLog.chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: recent.map(f => new Date(f.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})),
+                datasets: [
+                    { label: 'pH', data: recent.map(f => f.field1), borderColor: '#00d4ff', borderWidth: 2, tension: 0.4, pointRadius: 0, yAxisID: 'y' },
+                    { label: 'Temp', data: recent.map(f => f.field2), borderColor: '#ff4d4d', borderWidth: 2, tension: 0.4, pointRadius: 0, yAxisID: 'y' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: true, labels: {color:'#fff', font:{size:10}} } },
+                scales: { 
+                    x: { display: false }, 
+                    y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks:{color:'#ccc'} } 
+                }
+            }
+        });
     }
 };
 
-const storage = {
-    save: (d) => localStorage.setItem('aqua_conf_v5', JSON.stringify(d)),
-    load: () => JSON.parse(localStorage.getItem('aqua_conf_v5')),
-    saveLog: (d) => localStorage.setItem('aqua_log_v5', JSON.stringify(d)),
-    loadLog: () => JSON.parse(localStorage.getItem('aqua_log_v5'))
-};
+const storage = { save: (d) => localStorage.setItem('aqua_conf_v5', JSON.stringify(d)), load: () => JSON.parse(localStorage.getItem('aqua_conf_v5')) };
 
-// --- STARTUP & LOGIC ---
+// STARTUP
 const appFlow = {
-    start: () => {
-        setTimeout(() => {
-            document.getElementById('splashScreen').classList.add('fade-out');
-            setTimeout(() => { document.getElementById('splashScreen').style.display='none'; document.getElementById('creditsModal').classList.remove('hidden'); }, 1000);
-        }, 3000);
-    },
+    start: () => { setTimeout(() => { document.getElementById('splashScreen').classList.add('fade-out'); setTimeout(() => { document.getElementById('splashScreen').style.display='none'; document.getElementById('creditsModal').classList.remove('hidden'); }, 1000); }, 3000); },
     closeCredits: () => {
         document.getElementById('creditsModal').classList.add('hidden');
         const saved = storage.load();
         if(saved) { app.config=saved; appFlow.launch(); } else { document.getElementById('setupWizard').classList.remove('hidden'); wizard.next(1); }
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW Registered')).catch(err => console.warn('SW Fail:', err));
+        if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
+            navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW Fail:', e));
         }
     },
-    launch: () => {
-        document.querySelectorAll('.blur-ui').forEach(e=>e.classList.remove('blur-ui'));
-        initCharts(); setInterval(updateLoop, 2000);
-    }
+    launch: () => { document.querySelectorAll('.blur-ui').forEach(e=>e.classList.remove('blur-ui')); initCharts(); setInterval(updateLoop, 2000); }
 };
 
+// CORE LOGIC
+async function updateLoop() {
+    await blynk.check();
+    const [ph, temp, tds, turb, sys, buz] = await Promise.all([ blynk.get(PINS.ph), blynk.get(PINS.temp), blynk.get(PINS.tds), blynk.get(PINS.turb), blynk.get(PINS.sys), blynk.get(PINS.buz) ]);
+    const hasData = (ph !== null);
+    const badge = document.getElementById('connBadge'); const txt = document.getElementById('connText'); txt.style.display = "inline";
+    if(hasData) {
+        badge.className = 'status-badge online'; txt.innerText = "ONLINE"; document.getElementById('uiMain').classList.remove('offline-mode');
+        document.getElementById('btn-sys').checked = (sys === 1); document.getElementById('btn-buz').checked = (buz === 1);
+        updateDashboardUI(ph, temp, tds, turb);
+    } else { badge.className = 'status-badge offline'; txt.innerText = "OFFLINE"; document.getElementById('uiMain').classList.add('offline-mode'); }
+}
+
+function updateDashboardUI(ph, temp, tds, turb) {
+    const disp = (id, val, fix) => {
+        const el=document.getElementById('val-'+id), pi=document.getElementById('status-'+id), ca=document.getElementById('card-'+id);
+        if(val===-1 || val===-127) { el.innerText="--"; el.style.color="#666"; pi.innerText="NO SIGNAL"; pi.style.background="rgba(255,77,77,0.2)"; pi.style.color="var(--danger)"; ca.classList.add('error'); }
+        else { el.innerText=fix?Math.floor(val):val.toFixed(1); el.style.color="#fff"; ca.classList.remove('error'); pushChart(id, val); addToHistory(id, val); }
+    };
+    disp('ph', ph, false); disp('temp', temp, false); disp('tds', tds, true); disp('turb', turb, true);
+    if(Date.now() - app.lastAnalysis > 10000) { analyzeStable(); app.lastAnalysis = Date.now(); }
+}
+
 const blynk = {
-    check: async () => {
-        try {
-            const r = await fetch(`https://blynk.cloud/external/api/isHardwareConnected?token=${BLYNK_TOKEN}`);
-            const state = (await r.text()) === 'true';
-            document.getElementById('connBadge').className = `status-badge ${state?'online':'offline'}`;
-            document.getElementById('connText').style.display = "inline";
-            document.getElementById('connText').innerText = state?"ON":"OFF";
-        } catch(e){}
-    },
+    check: async () => { try { const r = await fetch(`https://blynk.cloud/external/api/isHardwareConnected?token=${BLYNK_TOKEN}`); const state = (await r.text()) === 'true'; } catch(e){} },
     get: async (p) => { try { const r = await fetch(`https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&${p}`); if(!r.ok) return null; return parseFloat((await r.text()).replace(/[\[\]"]/g, '')); } catch(e){ return null; } },
     set: async (p, v) => { try { await fetch(`https://blynk.cloud/external/api/update?token=${BLYNK_TOKEN}&${p}=${v?1:0}`); } catch(e){} }
 };
 
 const wizard = {
-    init: () => {
-        const g = document.getElementById('fishGrid'); g.innerHTML = '';
-        Object.keys(FISH_DB).forEach(f => { g.innerHTML += `<div><input type="checkbox" id="f_${f}" value="${f}" hidden><label for="f_${f}" class="opt-label">🐟 ${f}</label></div>`; });
-    },
-    edit: () => {
-        document.getElementById('setupWizard').classList.remove('hidden'); document.querySelectorAll('.blur-ui').forEach(e=>e.classList.add('blur-ui'));
-        wizard.next(1);
-        if(app.config.fish) {
-            document.querySelectorAll('input').forEach(i=>i.checked=false);
-            app.config.fish.forEach(f=> { if(document.getElementById(`f_${f}`)) document.getElementById(`f_${f}`).checked=true; });
-            app.config.elements.forEach(e=> { const el=document.querySelector(`input[value="${e}"]`); if(el) el.checked=true; });
-        }
-    },
+    init: () => { const g = document.getElementById('fishGrid'); g.innerHTML = ''; Object.keys(FISH_DB).forEach(f => { g.innerHTML += `<div><input type="checkbox" id="f_${f}" value="${f}" hidden><label for="f_${f}" class="opt-label">🐟 ${f}</label></div>`; }); },
+    edit: () => { document.getElementById('setupWizard').classList.remove('hidden'); document.querySelectorAll('.blur-ui').forEach(e=>e.classList.add('blur-ui')); wizard.next(1); if(app.config.fish) { document.querySelectorAll('input').forEach(i=>i.checked=false); app.config.fish.forEach(f=> { if(document.getElementById(`f_${f}`)) document.getElementById(`f_${f}`).checked=true; }); app.config.elements.forEach(e=> { const el=document.querySelector(`input[value="${e}"]`); if(el) el.checked=true; }); } },
     next: (s) => { document.getElementById('step1').style.display=s===1?'block':'none'; document.getElementById('step2').style.display=s===2?'block':'none'; },
     finish: () => {
-        const fish = Array.from(document.querySelectorAll('#step1 input:checked')).map(c=>c.value);
-        const elem = Array.from(document.querySelectorAll('#step2 input:checked')).map(c=>c.value);
+        const fish = Array.from(document.querySelectorAll('#step1 input:checked')).map(c=>c.value); const elem = Array.from(document.querySelectorAll('#step2 input:checked')).map(c=>c.value);
         if(!fish.length) fish.push("Guppy");
         let minT=0, maxT=100, minPH=0, maxPH=14, maxTDS=1000;
-        fish.forEach(f => {
-            const d = FISH_DB[f];
-            if(d.minT > minT) minT=d.minT; if(d.maxT < maxT) maxT=d.maxT;
-            if(d.minPH > minPH) minPH=d.minPH; if(d.maxPH < maxPH) maxPH=d.maxPH;
-            if(d.maxTDS < maxTDS) maxTDS=d.maxTDS;
-        });
-        if(elem.includes("Driftwood") || elem.includes("Soil") || elem.includes("CO2")) { minPH-=0.3; maxPH-=0.2; }
-        if(elem.includes("Rocks") || elem.includes("Coral")) { minPH+=0.3; maxPH+=0.3; maxTDS+=100; }
+        fish.forEach(f => { const d = FISH_DB[f]; if(d.minT > minT) minT=d.minT; if(d.maxT < maxT) maxT=d.maxT; if(d.minPH > minPH) minPH=d.minPH; if(d.maxPH < maxPH) maxPH=d.maxPH; if(d.maxTDS < maxTDS) maxTDS=d.maxTDS; });
+        if(elem.includes("Driftwood") || elem.includes("Soil") || elem.includes("CO2")) { minPH-=0.3; maxPH-=0.2; } if(elem.includes("Rocks") || elem.includes("Coral")) { minPH+=0.3; maxPH+=0.3; maxTDS+=100; }
         app.config = { elements:elem, fish:fish, limits:{minT, maxT, minPH, maxPH, maxTDS} };
-        storage.save(app.config);
-        document.getElementById('setupWizard').classList.add('hidden');
-        appFlow.launch();
+        storage.save(app.config); document.getElementById('setupWizard').classList.add('hidden'); appFlow.launch();
     }
 };
 
@@ -459,127 +496,30 @@ function initCharts() {
 }
 function pushChart(k, v) { const c=app.charts[k]; c.data.labels.push(''); c.data.datasets[0].data.push(v); if(c.data.labels.length>15) { c.data.labels.shift(); c.data.datasets[0].data.shift(); } c.update('none'); }
 
-async function updateLoop() {
-    await blynk.check();
-    const [ph, temp, tds, turb, sys, buz] = await Promise.all([
-        blynk.get(PINS.ph), blynk.get(PINS.temp), blynk.get(PINS.tds), blynk.get(PINS.turb), blynk.get(PINS.sys), blynk.get(PINS.buz)
-    ]);
-    if(ph===null) return;
-    document.getElementById('btn-sys').checked = (sys===1); document.getElementById('btn-buz').checked = (buz===1);
-    const disp = (id, val, fix) => {
-        const el=document.getElementById('val-'+id), pi=document.getElementById('status-'+id), ca=document.getElementById('card-'+id);
-        if(val===-1 || val===-127) {
-            el.innerText="--"; el.style.color="#666"; pi.innerText="NO SIGNAL"; pi.style.background="rgba(255,77,77,0.2)"; pi.style.color="var(--danger)"; ca.classList.add('error');
-        } else {
-            el.innerText=fix?Math.floor(val):val.toFixed(1); el.style.color="#fff"; ca.classList.remove('error'); pushChart(id, val); addToHistory(id, val);
-        }
-    };
-    disp('ph', ph, false); disp('temp', temp, false); disp('tds', tds, true); disp('turb', turb, true);
-    if(Date.now() - app.lastAnalysis > 10000) { analyzeStable(); app.lastAnalysis = Date.now(); }
-}
-
 function addToHistory(key, val) { if(val!==-1 && val!==-127) { app.history[key].push(val); if(app.history[key].length>30) app.history[key].shift(); } }
 function getAvg(key) { const a=app.history[key]; return a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0; }
 
-// === UPGRADED SMART ANALYTICS ENGINE (CONVERSATIONAL) ===
 function analyzeStable() {
     const L = app.config.limits, E = app.config.elements;
-    // Use average if available, otherwise fallback to last reading
-    const ph = getAvg('ph') || 0, temp = getAvg('temp') || 0, tds = getAvg('tds') || 0, turb = getAvg('turb') || 0;
+    const ph=getAvg('ph')||0, temp=getAvg('temp')||0, tds=getAvg('tds')||0, turb=getAvg('turb')||0;
+    let items=[], score=100, logStatus="Stable";
+    const setPill=(id, cls, txt)=>{ if(document.getElementById('val-'+id).innerText!=="--"){ const el=document.getElementById('status-'+id); el.className=`status-pill`; el.style.background=cls==='good'?'rgba(0,255,157,0.1)':(cls==='warn'?'rgba(255,204,0,0.1)':'rgba(255,59,59,0.1)'); el.style.color=cls==='good'?'var(--success)':(cls==='warn'?'var(--warning)':'var(--danger)'); el.innerText=txt; }};
     
-    let items = [], score = 100;
+    if(ph < L.minPH) { let reason="Water acidic.", fix="Add buffer."; if(E.includes("Driftwood")) { reason="Driftwood tannins detected."; fix="Partial water change."; } if(E.includes("CO2")) { reason="High CO2 injection."; fix="Reduce bubble count."; } items.push({type:'critical', title:`Low pH (${ph.toFixed(1)})`, rec:`${reason}<br><span class="rec-fix">FIX: ${fix}</span>`}); setPill('ph','bad','ACIDIC'); score-=20; if(logStatus!=="Critical") logStatus="Warning"; } else if(ph > L.maxPH) { let reason="Water alkaline.", fix="Add peat/almond leaves."; if(E.includes("Rocks")) { reason="Rocks leaching minerals."; fix="Remove hardscape."; } items.push({type:'warning', title:`High pH (${ph.toFixed(1)})`, rec:`${reason}<br><span class="rec-fix">FIX: ${fix}</span>`}); setPill('ph','warn','ALKALINE'); score-=10; if(logStatus!=="Critical") logStatus="Warning"; } else setPill('ph','good','OPTIMAL');
+    if(temp < L.minT) { items.push({type:'critical', title:`Low Temp`, rec:`Too cold.<br><span class="rec-fix">FIX: Check heater.</span>`}); setPill('temp','bad','COLD'); score-=30; logStatus="Critical"; } else if(temp > L.maxT) { items.push({type:'critical', title:`High Temp`, rec:`Overheating.<br><span class="rec-fix">FIX: Cool down.</span>`}); setPill('temp','bad','HOT'); score-=30; logStatus="Critical"; } else setPill('temp','good','OPTIMAL');
+    if(turb < 20) { if(E.includes("Soil")) { items.push({type:'warning', title:'Haze', rec:`Soil dust.<br><span class="rec-fix">FIX: Settles naturally.</span>`}); setPill('turb','warn','HAZE'); score-=5; if(logStatus!=="Critical") logStatus="Warning"; } else { items.push({type:'critical', title:'Low Clarity', rec:`Dirty water.<br><span class="rec-fix">FIX: Check filter.</span>`}); setPill('turb','bad','DIRTY'); score-=15; logStatus="Critical"; } } else setPill('turb','good','CLEAR');
+    if(tds > L.maxTDS) { items.push({type:'warning', title:'High TDS', rec:`Dissolved solids.<br><span class="rec-fix">FIX: Water change.</span>`}); setPill('tds','warn','HIGH'); score-=10; if(logStatus!=="Critical") logStatus="Warning"; } else setPill('tds','good','OPTIMAL');
 
-    const setPill=(id, cls, txt)=>{ 
-        if(document.getElementById('val-'+id).innerText!=="--"){ 
-            const el=document.getElementById('status-'+id); 
-            el.className=`status-pill`; 
-            el.style.background=cls==='good'?'rgba(0,255,157,0.1)':(cls==='warn'?'rgba(255,204,0,0.1)':'rgba(255,59,59,0.1)'); 
-            el.style.color=cls==='good'?'var(--success)':(cls==='warn'?'var(--warning)':'var(--danger)'); 
-            el.innerText=txt; 
-        }
-    };
-
-    // 1. pH LOGIC (Conversational Context)
-    if(ph < L.minPH) {
-        let reason = "The water is becoming too acidic.";
-        let fix = "Consider adding a pH buffer solution.";
-        // Context Checks
-        if (E.includes("Driftwood")) { reason = "It looks like tannins from your <b>Driftwood</b> are lowering the pH naturally."; fix = "You can remove some wood or perform a partial water change."; }
-        if (E.includes("CO2")) { reason = "Your <b>CO2 injection</b> might be too high, causing acidity."; fix = "Reduce the CO2 bubble count immediately."; }
-        
-        items.push({type:'critical', title:`Low pH (${ph.toFixed(1)})`, rec:`${reason}<br><span class="rec-fix">RECOMMENDATION: ${fix}</span>`}); 
-        setPill('ph','bad','ACIDIC'); score-=20;
-    } 
-    else if(ph > L.maxPH) {
-        let reason = "The water is too alkaline (basic).";
-        let fix = "You can add peat moss or almond leaves to the filter.";
-        // Context Checks
-        if (E.includes("Rocks") || E.includes("Coral")) { reason = "Your <b>Rocks or Coral</b> are likely leaching minerals into the water."; fix = "Consider removing some hardscape elements."; }
-        if (E.includes("Plants")) { reason = "Rapid plant photosynthesis might be raising the pH."; fix = "Try reducing the light period by 1 hour."; }
-
-        items.push({type:'warning', title:`High pH (${ph.toFixed(1)})`, rec:`${reason}<br><span class="rec-fix">RECOMMENDATION: ${fix}</span>`}); 
-        setPill('ph','warn','ALKALINE'); score-=10;
-    } 
-    else setPill('ph','good','OPTIMAL');
-
-    // 2. TEMP LOGIC
-    if(temp < L.minT) { 
-        items.push({type:'critical', title:`Low Temp (${temp.toFixed(1)}°C)`, rec:`The water is too cold for your livestock.<br><span class="rec-fix">ACTION: Check if your heater is plugged in or set correctly.</span>`}); 
-        setPill('temp','bad','COLD'); score-=30; 
-    } 
-    else if(temp > L.maxT) { 
-        items.push({type:'critical', title:`High Temp (${temp.toFixed(1)}°C)`, rec:`Risk of overheating detected.<br><span class="rec-fix">ACTION: Turn off tank lights & float ice bottles to cool it down.</span>`}); 
-        setPill('temp','bad','HOT'); score-=30; 
-    } 
-    else setPill('temp','good','OPTIMAL');
-
-    // 3. CLARITY LOGIC
-    if(turb < 20) { 
-        // Check if the user has Soil
-        if(E.includes("Soil")) { 
-            items.push({type:'warning', title:'Water Haze', rec:`This haze is likely dust from your <b>Aqua Soil</b>.<br><span class="rec-fix">NOTE: Do nothing. It will settle naturally in 24 hours.</span>`}); 
-            setPill('turb','warn','HAZE'); score-=5; 
-        } else { 
-            items.push({type:'critical', title:'Low Clarity', rec:`The water is unusually cloudy or dirty.<br><span class="rec-fix">ACTION: Check your filter flow or look for a bacterial bloom.</span>`}); 
-            setPill('turb','bad','DIRTY'); score-=15; 
-        } 
-    } else setPill('turb','good','CLEAR');
-
-    // 4. TDS LOGIC
-    if(tds > L.maxTDS) { 
-        let reason = "High concentration of dissolved solids.";
-        if (E.includes("Coral")) reason = "Your <b>Crushed Coral</b> substrate is dissolving rapidly.";
-        
-        items.push({type:'warning', title:'High TDS', rec:`${reason}<br><span class="rec-fix">ACTION: Perform a 20% water change to dilute it.</span>`}); 
-        setPill('tds','warn','HIGH'); score-=10; 
-    } else setPill('tds','good','OPTIMAL');
-
-    // RENDER
     const feed=document.getElementById('analysis-feed');
-    if(!items.length) feed.innerHTML=`<div class="rec-card good"><div class="rec-header">✅ System Stable</div><div class="rec-body">All water parameters match the specific needs of your selected livestock.</div></div>`;
+    if(!items.length) feed.innerHTML=`<div class="rec-card good"><div class="rec-header">✅ System Stable</div><div class="rec-body">Parameters optimal.</div></div>`;
     else feed.innerHTML=items.map(i=>`<div class="rec-card ${i.type}"><div class="rec-header"><span>${i.type==='critical'?'🚨':'⚠️'} ${i.title}</span></div><div class="rec-body">${i.rec}</div></div>`).join('');
-
-    if(score<0) score=0; const el=document.getElementById('healthScore'), ring=document.getElementById('scoreCircle');
-    el.innerText=Math.floor(score)+"%";
+    if(score<0) score=0; const el=document.getElementById('healthScore'), ring=document.getElementById('scoreCircle'); el.innerText=Math.floor(score)+"%";
     let c='var(--success)'; if(score<80) c='var(--warning)'; if(score<50) c='var(--danger)';
     ring.style.borderColor=c; el.style.color=c;
-    document.getElementById('lastAnalysisTime').innerText="Analysis: "+new Date().toLocaleTimeString();
-    
-    historyLog.add(ph, temp, tds, turb, score);
+    document.getElementById('lastAnalysisTime').innerText="Upd: "+new Date().toLocaleTimeString();
 }
 
 window.onload = () => { wizard.init(); appFlow.start(); };
 </script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
-    .then(() => console.log("Service Worker registered"))
-    .catch(err => console.log("SW registration failed:", err));
-}
-</script>
-
-
 </body>
-
 </html>
-
